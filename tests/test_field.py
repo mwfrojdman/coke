@@ -119,7 +119,7 @@ def test_inline_fragment():
                 column=16,
                 name=ast.NameNode(1, 17, 'include', ),
                 arguments={
-                    ast.NameNode(1, 25, 'if'): ast.VariableNode(1, 29, ast.NameNode(1, 30, 'someVar')),
+                    ast.NameNode(1, 25, 'if'): ast.VariableNode(1, 29, 'someVar'),
                 }
             )
         ],
@@ -191,10 +191,10 @@ nestedField {
                 directives=[
                     ast.DirectiveNode(
                         line=3,
-                        column=17,
-                        name=ast.NameNode(3, 18, 'include',),
+                        column=18,
+                        name=ast.NameNode(3, 19, 'include',),
                         arguments={
-                            ast.NameNode(3, 19, 'if'): ast.VariableNode(3, 23, 'someVar'),
+                            ast.NameNode(3, 27, 'if'): ast.VariableNode(3, 31, 'someVar'),
                         }
                     )
                 ],

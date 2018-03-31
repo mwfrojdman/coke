@@ -219,7 +219,7 @@ class InlineFragmentNode(BaseNode):
             clsname=self.__class__.__name__,
             line=self.line,
             col=self.column,
-            type_cond=self.type_condition,
+            type_cond=self.type_condition.value,
             dirs=self.directives,
             selection_set=self.selection_set,
         )

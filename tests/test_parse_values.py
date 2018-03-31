@@ -78,4 +78,4 @@ def test_parse_object_value():
 
 def test_parse_variable_value():
     parser = create_parser('variable')
-    assert parser.parse('$myvar') == ast.VariableNode(1, 0, ast.NameNode(1, 1, 'myvar'))
+    assert parser.parse('$myvar') == ast.VariableNode(1, 0, 'myvar')

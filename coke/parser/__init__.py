@@ -76,7 +76,7 @@ VARIABLE_START: "$"
 
 fragment_definition: "fragment" fragment_name type_condition directives selection_set
 // same as name but excluding "on"
-fragment_name: /([_A-Za-np-z][_0-9A-Za-z]*)|(o([_0-9A-Za-mo-z][_0-9A-Za-z]*|n[_0-9A-Za-z]+)?)/
+fragment_name: /([_A-Za-np-z][_0-9A-Za-z]*)|(o([_0-9A-Za-mo-z][_0-9A-Za-z]*|n([_0-9A-Za-z]+|\b))?)/
 type_condition: ON_KEYWORD named_type
 ON_KEYWORD: "on"
 
@@ -156,7 +156,7 @@ class TreeToDocument(Transformer):
 
     @inline_args
     def variable(self, variable_start, value: ast.NameNode):
-        return ast.VariableNode(variable_start.line, variable_start.column, value)
+        return ast.VariableNode(variable_start.line, variable_start.column, value.value)
 
     def variable_definitions(self, args):
         if args == []:
@@ -226,6 +226,7 @@ class TreeToDocument(Transformer):
 
     def directive(self, matches):
         directive_start, name_node, *arguments_nodes = matches
+        assert directive_start == '@'
         if arguments_nodes:
             arguments_node, = arguments_nodes
             arguments = dict(arguments_node.value)
