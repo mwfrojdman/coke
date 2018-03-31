@@ -38,6 +38,9 @@ setup(
     ],
     package_data={'': ['LICENSE.txt']},
     python_requires='>=3.5',
+    install_requires=[
+        'lark-parser',
+    ],
     extras_require={
         'test': [
             'pytest',
