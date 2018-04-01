@@ -1,5 +1,4 @@
-from coke.parser import ast
-from coke.parser import create_parser
+from coke.parser import ast, create_parser
 
 
 def test_parse_string_value():
