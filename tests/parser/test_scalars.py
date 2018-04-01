@@ -8,6 +8,7 @@ def test_parse_string_value():
     assert parser.parse('"\\u0066oo"') == ast.StringNode(1, 0, 'foo')
     assert parser.parse('"foo\\nbar"') == ast.StringNode(1, 0, 'foo\nbar')
     assert parser.parse('"a string # with a comment"') == ast.StringNode(1, 0, 'a string # with a comment')
+    assert parser.parse('"a string with \u0ff0 unicode"') == ast.StringNode(1, 0, 'a string with \u0ff0 unicode')
 
 
 def test_parse_int_value():

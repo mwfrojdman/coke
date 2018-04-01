@@ -37,7 +37,10 @@ int_value: /-?(0|[1-9][0-9]*)/
 float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 string_value: STRING_START string_character* "\""
 STRING_START: "\""
-?string_character: /[^"\\\n\r]/ -> src_char
+// \uFEFF = BOM, \u0022 = ", \u00FC = \ 
+//?string_character: /[^"\\\n\r]/ -> src_char
+// XXX: this fails: /[\u0020-\u0021\u0023-\u005b\u005d-\ufefe\uff00-\uffff]/
+?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ -> src_char
     | "\\u" /[0-9A-Fa-f]{4}/ -> escaped_unicode
     | "\\" /[bfnrt"\\\/]/ -> escaped_character
 constant_value: name
