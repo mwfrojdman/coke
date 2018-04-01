@@ -35,14 +35,17 @@ default_value: value
 
 int_value: /-?(0|[1-9][0-9]*)/
 float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
-string_value: STRING_START string_character* "\""
-STRING_START: "\""
+string_value: DOUBLE_QUOTE string_character* DOUBLE_QUOTE -> simple_string
+    | TRIPLE_QUOTES block_string_character* TRIPLE_QUOTES -> block_string
+DOUBLE_QUOTE: "\""
+TRIPLE_QUOTES: "\"\"\""
 // \uFEFF = BOM, \u0022 = ", \u00FC = \ 
-//?string_character: /[^"\\\n\r]/ -> src_char
 // XXX: this fails: /[\u0020-\u0021\u0023-\u005b\u005d-\ufefe\uff00-\uffff]/
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ -> src_char
     | "\\u" /[0-9A-Fa-f]{4}/ -> escaped_unicode
     | "\\" /[bfnrt"\\\/]/ -> escaped_character
+?block_string_character: "\\\"\"\"" -> escaped_triple_double_quotes
+    | /[\t\n\r -\ufefe\uff00-\uffff]/ -> block_char
 constant_value: name
 list_value: LIST_START value* "]"
 LIST_START: "["
@@ -104,8 +107,7 @@ _ESCAPED_CHARS = {
 
 
 class TreeToDocument(Transformer):
-    def string_value(self, matches):
-        #raise ValueError(matches)
+    def simple_string(self, matches):
         string_start, *matches, string_end = matches
         chars = []
         for tree in matches:
@@ -120,6 +122,18 @@ class TreeToDocument(Transformer):
                 chars.append(_ESCAPED_CHARS[escaped_char])
             else:
                 raise ValueError(tree.data)
+        return ast.StringNode(string_start.line, string_start.column, ''.join(chars))
+
+    def block_string(self, matches):
+        string_start, *matches, _ = matches
+        chars = []
+        for match in matches:
+            if match.data == 'block_char':
+                chars.extend(match.children)
+            elif match.data == 'escaped_triple_double_quotes':
+                chars.append('"""')
+            else:
+                raise ValueError(match)
         return ast.StringNode(string_start.line, string_start.column, ''.join(chars))
 
     @inline_args
