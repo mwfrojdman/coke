@@ -74,17 +74,15 @@ non_null_type: (named_type | list_type) "!"
 variable: VARIABLE_START name
 VARIABLE_START: "$"
 
-fragment_definition: "fragment" fragment_name type_condition directives selection_set
-// same as name but excluding "on"
-fragment_name: /([_A-Za-np-z][_0-9A-Za-z]*)|(o([_0-9A-Za-mo-z][_0-9A-Za-z]*|n([_0-9A-Za-z]+|\b))?)/
+// "on" is not allowed in fragment name, but strings takes precedence over regular expression
+fragment_definition: "fragment" name type_condition directives selection_set
 type_condition: ON_KEYWORD named_type
 ON_KEYWORD: "on"
 
-fragment_spread: THREE_DOTS fragment_name directives?
+fragment_spread: THREE_DOTS name directives?
 THREE_DOTS: "..."
 
 inline_fragment: THREE_DOTS type_condition? directives? selection_set
-
 
 %ignore /([ \t\n\r,]+)|#[^\r\n]*/
 """
@@ -243,13 +241,6 @@ class TreeToDocument(Transformer):
     def selection(self, match):
         # selection: field | fragment_spread | inline_fragment
         return match
-
-    @inline_args
-    def fragment_name(self, match):
-        if match.value == "on":
-            raise ValueError('Should not match "on": {!r}'.format(match))
-        # line name, but excludes the string "on"
-        return ast.NameNode(match.line, match.column, match.value)
 
     def fragment_spread(self, matches):
         # fragment_spread: "..." fragment_name directives?
