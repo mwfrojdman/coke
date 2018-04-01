@@ -21,6 +21,14 @@ def test_parse_block_string_value():
     assert parser.parse('"""hello\\"world"""') == ast.StringNode(1, 0, 'hello\\"world')
     assert parser.parse('"""hello\\world"""') == ast.StringNode(1, 0, 'hello\\world')
 
+    assert parser.parse('''"""
+           
+   hello
+      world
+   
+
+                        """''') == ast.StringNode(1, 0, 'hello\n   world')
+
 
 def test_parse_int_value():
     parser = create_parser('int_value')

@@ -1,3 +1,5 @@
+import re
+
 from lark import Lark, inline_args, Transformer, Tree
 from lark.lexer import Token
 
@@ -126,15 +128,38 @@ class TreeToDocument(Transformer):
 
     def block_string(self, matches):
         string_start, *matches, _ = matches
-        chars = []
-        for match in matches:
-            if match.data == 'block_char':
-                chars.extend(match.children)
-            elif match.data == 'escaped_triple_double_quotes':
-                chars.append('"""')
+
+        lines = re.split(
+            r'\r\n|\r|\n',  # XXX: \r\n has to come first
+            ''.join(match.children[0] if match.data == 'block_char' else '"""' for match in matches),
+        )
+
+        common_indent = None
+
+        for line in lines[1:]:
+            indent = 0
+            for c in line:
+                if c != ' ' and c != '\t':
+                    break
+                indent += 1
             else:
-                raise ValueError(match)
-        return ast.StringNode(string_start.line, string_start.column, ''.join(chars))
+                continue
+            if common_indent is None or indent < common_indent:
+                common_indent = indent
+
+        while lines and all(c == ' ' or c == '\t' for c in lines[0]):
+            del lines[0]
+        while lines and all(c == ' ' or c == '\t' for c in lines[-1]):
+            del lines[-1]
+
+        if common_indent is not None and common_indent > 0:
+            s = '\n'.join(
+                line[common_indent:] for line in lines
+            )
+        else:
+            s = '\n'.join(lines)
+
+        return ast.StringNode(string_start.line, string_start.column, s)
 
     @inline_args
     def int_value(self, match: Token):
