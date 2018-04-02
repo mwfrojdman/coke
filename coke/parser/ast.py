@@ -1,4 +1,4 @@
-from typing import List, Any, Mapping, Union, Tuple, NamedTuple
+from typing import List, Any, Mapping, Union, Tuple, NamedTuple, Optional
 
 ValueT = Union[
     'BooleanValueNode', 'NullValueNode', 'EnumValueNode', 'IntValueNode', 'FloatValueNode', 'EnumValueNode',
@@ -54,6 +54,37 @@ class BooleanValueNode:
 
     def __repr__(self):
         return 'BooleanValue<{}:{} {}>'.format(self.line, self.column, self.value)
+
+
+class DirectiveNode:
+    __slots__ = 'line', 'column', 'name_node', 'arguments_node'
+
+    def __init__(self, line: int, column: int, name_node: 'NameNode', arguments_node: Optional[ArgumentsNode]):
+        self.line = line
+        self.column = column
+        self.name_node = name_node
+        self.arguments_node = arguments_node
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.name_node == self.name_node and other.arguments_node == self.arguments_node
+
+    def __repr__(self):
+        return 'Directive<{}:{} {} ({!r})>'.format(self.line, self.column, self.name_node.name, self.arguments_node)
+
+
+class DirectivesNode:
+    __slots__ = 'line', 'column', 'directive_nodes'
+
+    def __init__(self, line: int, column: int, directive_nodes: List[DirectiveNode]):
+        self.line = line
+        self.column = column
+        self.directive_nodes = directive_nodes
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.directive_nodes == self.directive_nodes
+
+    def __repr__(self):
+        return 'Directives<{}:{} {!r}>'.format(self.line, self.column, self.directive_nodes)
 
 
 class EnumValueNode:

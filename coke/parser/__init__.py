@@ -1,6 +1,6 @@
 import json
 import re
-from typing import List, Iterable, Union
+from typing import List, Iterable, Union, Optional
 
 from lark import Lark, Transformer, inline_args
 from lark.lexer import Token
@@ -9,6 +9,7 @@ from coke.parser.exceptions import ParseError
 from . import ast
 
 _GRAMMAR = r"""
+AT: "@"
 _COLON: ":"
 DBLQUOTE: "\""
 DOLLAR: "$"
@@ -34,6 +35,10 @@ arguments: LPAREN _IGNORE? argument (_IGNORE? argument)* _IGNORE? _RPAREN
 
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
+
+directive: AT _IGNORE? name (_IGNORE? arguments)?
+
+directives: directive (_IGNORE? directive)*
 
 enum_bool_or_null_value: name
 
@@ -163,6 +168,28 @@ class _AstTransformer(Transformer):
                 break
 
         return ast.StringValueNode(line=string_start.line, column=string_start.column, string='\n'.join(lines))
+
+    @inline_args
+    def directive(
+            self,
+            at_token: Token,
+            name_node: ast.NameNode,
+            arguments_node: Optional[ast.ArgumentsNode] = None
+    ) -> ast.DirectiveNode:
+        return ast.DirectiveNode(
+            line=at_token.line,
+            column=at_token.column,
+            name_node=name_node,
+            arguments_node=arguments_node,
+        )
+
+    def directives(self, directive_nodes: List[ast.DirectiveNode]) -> ast.DirectivesNode:
+        first_directive_node = directive_nodes[0]
+        return ast.DirectivesNode(
+            line=first_directive_node.line,
+            column=first_directive_node.column,
+            directive_nodes=directive_nodes,
+        )
 
     @inline_args
     def enum_bool_or_null_value(self, name_node: ast.NameNode):
