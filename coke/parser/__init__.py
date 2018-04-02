@@ -1,4 +1,5 @@
 import re
+from collections import deque
 
 from lark import Lark, inline_args, Transformer, Tree
 from lark.lexer import Token
@@ -126,17 +127,17 @@ class TreeToDocument(Transformer):
                 raise ValueError(tree.data)
         return ast.StringNode(string_start.line, string_start.column, ''.join(chars))
 
-    def block_string(self, matches):
-        string_start, *matches, _ = matches
-
-        lines = re.split(
+    @staticmethod
+    def _block_string_lines(matches):
+        """Generates unindented lines from block strings"""
+        raw_lines = re.split(
             r'\r\n|\r|\n',  # XXX: \r\n has to come first
             ''.join(match.children[0] if match.data == 'block_char' else '"""' for match in matches),
         )
 
         common_indent = None
 
-        for line in lines[1:]:
+        for line in raw_lines[1:]:
             indent = 0
             for c in line:
                 if c != ' ' and c != '\t':
@@ -147,19 +148,38 @@ class TreeToDocument(Transformer):
             if common_indent is None or indent < common_indent:
                 common_indent = indent
 
-        while lines and all(c == ' ' or c == '\t' for c in lines[0]):
-            del lines[0]
-        while lines and all(c == ' ' or c == '\t' for c in lines[-1]):
-            del lines[-1]
-
         if common_indent is not None and common_indent > 0:
-            s = '\n'.join(
-                line[common_indent:] for line in lines
-            )
+            yield raw_lines[0]
+            for line in raw_lines[1:]:
+                yield line[common_indent:]
         else:
-            s = '\n'.join(lines)
+            yield from raw_lines
 
-        return ast.StringNode(string_start.line, string_start.column, s)
+    def block_string(self, matches):
+        string_start, *matches, _ = matches
+
+        lines = []
+        lines_iter = self._block_string_lines(matches)
+
+        # skips any blank or empty leading lines
+        for line in lines_iter:
+            if any(c != ' ' and c != '\t' for c in line):
+                lines.append(line)
+                break
+        else:
+            # nothing but empty/blank lines
+            ast.StringNode(string_start.line, string_start.column, '')
+
+        lines.extend(lines_iter)
+
+        # remove trailing blank/empty lines
+        for i, line in enumerate(reversed(lines)):
+            if any(c != ' ' and c != '\t' for c in line):
+                if i > 0:
+                    del lines[-i:]
+                break
+
+        return ast.StringNode(string_start.line, string_start.column, '\n'.join(lines))
 
     @inline_args
     def int_value(self, match: Token):

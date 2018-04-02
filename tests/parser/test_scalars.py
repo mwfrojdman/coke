@@ -11,25 +11,6 @@ def test_parse_string_value():
     assert parser.parse('"a string with \u0ff0 unicode"') == ast.StringNode(1, 0, 'a string with \u0ff0 unicode')
 
 
-def test_parse_block_string_value():
-    parser = create_parser('string_value')
-    assert parser.parse('""""""') == ast.StringNode(1, 0, '')
-    assert parser.parse('"""hello\nworld"""') == ast.StringNode(1, 0, 'hello\nworld')
-    assert parser.parse('"""hello\\"""world"""') == ast.StringNode(1, 0, 'hello"""world')
-
-    assert parser.parse('"""hello\\""world"""') == ast.StringNode(1, 0, 'hello\\""world')
-    assert parser.parse('"""hello\\"world"""') == ast.StringNode(1, 0, 'hello\\"world')
-    assert parser.parse('"""hello\\world"""') == ast.StringNode(1, 0, 'hello\\world')
-
-    assert parser.parse('''"""
-           
-   hello
-      world
-   
-
-                        """''') == ast.StringNode(1, 0, 'hello\n   world')
-
-
 def test_parse_int_value():
     parser = create_parser('int_value')
     assert parser.parse('-123') == ast.IntNode(1, 0, -123)
