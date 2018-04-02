@@ -1,3 +1,4 @@
+import json
 import re
 from typing import List, Iterable, Union
 
@@ -16,6 +17,8 @@ _ESCAPED_TRIPLE_QUOTES: "\\\"\"\""
 
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
+
+float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
 int_value: /-?(0|[1-9][0-9]*)/
 
@@ -102,6 +105,10 @@ class _AstTransformer(Transformer):
     @staticmethod
     def escaped_triple_double_quotes(escaped_triple_quotes: str) -> str:
         return '"""'
+
+    @inline_args
+    def float_value(self, float_token: Token):
+        return ast.FloatValueNode(line=float_token.line, column=float_token.column, number=float(float_token))
 
     @inline_args
     def int_value(self, int_token: Token):
