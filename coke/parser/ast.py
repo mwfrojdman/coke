@@ -191,6 +191,21 @@ class StringValueNode:
         return 'StringValue<{}:{} {!r}>'.format(self.line, self.column, self.string)
 
 
+class TypeConditionNode:
+    __slots__ = 'line', 'column', 'type_name'
+
+    def __init__(self, line: int, column: int, type_name: str):
+        self.line = line
+        self.column = column
+        self.type_name = type_name
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.type_name == self.type_name
+
+    def __repr__(self):
+        return 'TypeCondition<{}:{} {!r}>'.format(self.line, self.column, self.type_name)
+
+
 class VariableNode:
     __slots__ = 'line', 'column', 'variable'
 

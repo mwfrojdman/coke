@@ -22,6 +22,7 @@ _RBRACKET: "]"
 TRIPLE_QUOTES: "\"\"\""
 _UNICODE_ESCAPE: "\\u"
 _ESCAPED_TRIPLE_QUOTES: "\\\"\"\""
+ON_KEYWORD: "on"
 
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
@@ -32,17 +33,17 @@ float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
 int_value: /-?(0|[1-9][0-9]*)/
 
-list_type: LBRACKET type _RBRACKET
+list_type: LBRACKET _IGNORE? type _IGNORE? _RBRACKET
 
-list_value: LBRACKET value* _RBRACKET
+list_value: LBRACKET _IGNORE? value* _IGNORE? _RBRACKET
 
 name: /[_A-Za-z][_0-9A-Za-z]*/
 
 named_type: name
 
-non_null_type: (named_type | list_type) _EXCL
+non_null_type: (named_type | list_type) _IGNORE? _EXCL
 
-object_field: name _COLON value
+object_field: name _IGNORE? _COLON _IGNORE? value
 
 object_value: LBRACES object_field* _RBRACES
 
@@ -57,6 +58,8 @@ string_value: DBLQUOTE string_character* DBLQUOTE -> quoted_string
     | list_type
     | non_null_type
 
+type_condition: ON_KEYWORD _IGNORE? named_type
+
 ?value: variable
     | int_value
     | float_value
@@ -65,7 +68,9 @@ string_value: DBLQUOTE string_character* DBLQUOTE -> quoted_string
     | list_value
     | object_value
 
-variable: DOLLAR name
+variable: DOLLAR _IGNORE? name
+
+_IGNORE: /([ \t\n\r,]+)|#[^\r\n]*/
 """
 
 
@@ -202,6 +207,14 @@ class _AstTransformer(Transformer):
     def string_character_escaped_unicode(self, unicode_code_str: str) -> str:
         # unicode_code_str is four digits
         return chr(int(unicode_code_str, 16))
+
+    @inline_args
+    def type_condition(self, on_kw_token: Token, named_type_node: ast.NamedTypeNode) -> ast.TypeConditionNode:
+        return ast.TypeConditionNode(
+            line=on_kw_token.line,
+            column=on_kw_token.column,
+            type_name=named_type_node.type_name,
+        )
 
     @staticmethod
     def quoted_string(matches: List[Union[str, Token]]) -> ast.StringValueNode:
