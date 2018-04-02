@@ -43,7 +43,7 @@ int_value: /-?(0|[1-9][0-9]*)/
 
 list_type: LBRACKET _IGNORE? type _IGNORE? _RBRACKET
 
-list_value: LBRACKET _IGNORE? value* _IGNORE? _RBRACKET
+list_value: LBRACKET _IGNORE? (value _IGNORE?)* _RBRACKET
 
 name: /[_A-Za-z][_0-9A-Za-z]*/
 

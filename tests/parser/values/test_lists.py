@@ -17,3 +17,5 @@ def test_list_of_strings():
         ]
     )
     assert _PARSER.parse('["hello""world"]') == expected
+    assert _PARSER.parse('["hello" "world"]') == expected
+    assert _PARSER.parse('[ "hello" "world" ]') == expected
