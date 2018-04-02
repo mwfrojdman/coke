@@ -24,6 +24,8 @@ _UNICODE_ESCAPE: "\\u"
 _ESCAPED_TRIPLE_QUOTES: "\\\"\"\""
 ON_KEYWORD: "on"
 
+alias: name _IGNORE? _COLON
+
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
 
@@ -117,6 +119,10 @@ def _split_block_string_lines(string_parts: List[str]) -> Iterable[str]:
 
 
 class _AstTransformer(Transformer):
+    @inline_args
+    def alias(self, name_node: ast.NameNode) -> ast.AliasNode:
+        return ast.AliasNode(line=name_node.line, column=name_node.column, alias=name_node.name)
+
     @staticmethod
     def block_string(matches: List[Union[str, Token]]) -> ast.StringValueNode:
         string_start, *string_parts, _ = matches

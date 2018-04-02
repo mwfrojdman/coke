@@ -8,6 +8,21 @@ ValueT = Union[
 TypeNodeT = Union['NamedTypeNode', 'ListTypeNode', 'NonNullTypeNode']
 
 
+class AliasNode:
+    __slots__ = 'line', 'column', 'alias'
+
+    def __init__(self, line: int, column: int, alias: str):
+        self.line = line
+        self.column = column
+        self.alias = alias
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.alias == self.alias
+
+    def __repr__(self):
+        return 'Alias<{}:{} {}>'.format(self.line, self.column, self.alias)
+
+
 class BooleanValueNode:
     __slots__ = 'line', 'column', 'value'
 
