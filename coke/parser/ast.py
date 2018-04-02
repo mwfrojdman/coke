@@ -103,6 +103,49 @@ class EnumValueNode:
         return 'EnumValue<{}:{} {}>'.format(self.line, self.column, self.enum)
 
 
+class FieldNode:
+    __slots__ = 'line', 'column', 'alias_node', 'name_node', 'arguments_node', 'directives_node', 'selection_set_node'
+
+    def __init__(
+            self,
+            line: int,
+            column: int,
+            alias_node: Optional[AliasNode],
+            name_node: 'NameNode',
+            arguments_node: Optional[ArgumentsNode],
+            directives_node: Optional[DirectivesNode],
+            selection_set_node: Optional['SelectionSetNode']
+    ):
+        self.line = line
+        self.column = column,
+        self.alias_node = alias_node
+        self.name_node = name_node
+        self.arguments_node = arguments_node
+        self.directives_node = directives_node
+        self.selection_set_node = selection_set_node
+
+    def __eq__(self, other):
+        return (
+            type(other) == type(self) and
+            other.alias_node == self.alias_node and
+            other.name_node == self.name_node and
+            other.arguments_node == self.arguments_node and
+            other.directives_node == self.directives_node and
+            other.selection_set_node == self.selection_set_node
+        )
+
+    def __repr__(self):
+        return 'Field<{}:{} {}: {} {!r} {!r} {!r}>'.format(
+            self.line,
+            self.column,
+            None if self.alias_node is None else self.alias_node.alias,
+            self.name_node.name,
+            self.arguments_node,
+            self.directives_node,
+            self.selection_set_node,
+        )
+
+
 class FloatValueNode:
     __slots__ = 'line', 'column', 'number'
 

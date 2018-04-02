@@ -42,6 +42,8 @@ directives: directive (_IGNORE? directive)*
 
 enum_bool_or_null_value: name
 
+field: (alias _IGNORE?)? name (_IGNORE? arguments)? (_IGNORE? directives)?  // TODO: (_IGNORE? selection_set)?
+
 float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
 int_value: /-?(0|[1-9][0-9]*)/
@@ -205,6 +207,45 @@ class _AstTransformer(Transformer):
     @staticmethod
     def escaped_triple_double_quotes(escaped_triple_quotes: str) -> str:
         return '"""'
+
+    def field(self, matches):
+        first_match, *rest = matches
+
+        if isinstance(first_match, ast.AliasNode):
+            alias_node = first_match
+            name_node, *rest = rest
+        else:
+            alias_node = None
+            name_node = first_match
+
+        arguments_node = None
+        directives_node = None
+        selection_set_node = None
+
+        if rest:
+            maybe_arguments, *maybe_rest = rest
+            if isinstance(maybe_arguments, ast.ArgumentsNode):
+                arguments_node = maybe_arguments
+                rest = maybe_rest
+
+        if rest:
+            maybe_directives, *maybe_rest = rest
+            if isinstance(maybe_directives, ast.DirectivesNode):
+                directives_node = maybe_directives
+                rest = maybe_rest
+
+        if rest:
+            selection_set_node, = rest
+
+        return ast.FieldNode(
+            line=first_match.line,
+            column=first_match.column,
+            alias_node=alias_node,
+            name_node=name_node,
+            arguments_node=arguments_node,
+            directives_node=directives_node,
+            selection_set_node=selection_set_node,
+        )
 
     @inline_args
     def float_value(self, float_token: Token):
