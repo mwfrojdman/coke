@@ -1,3 +1,6 @@
+from typing import List, Any
+
+
 class BooleanValueNode:
     __slots__ = 'line', 'column', 'value'
 
@@ -57,6 +60,21 @@ class IntValueNode:
 
     def __repr__(self):
         return 'IntValue<{}:{} {}>'.format(self.line, self.column, self.integer)
+
+
+class ListValueNode:
+    __slots__ = 'line', 'column', 'items'
+
+    def __init__(self, line: int, column: int, items: List[Any]):
+        self.line = line
+        self.column = column
+        self.items = items
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.items == self.items
+
+    def __repr__(self):
+        return 'ListValue<{}:{} {!r}>'.format(self.line, self.column, self.items)
 
 
 class NameNode:

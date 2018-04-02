@@ -10,6 +10,8 @@ from . import ast
 _GRAMMAR = r"""
 DBLQUOTE: "\""
 _BACKSLASH: "\\"
+LBRACKET: "["
+_RBRACKET: "]"
 
 TRIPLE_QUOTES: "\"\"\""
 _UNICODE_ESCAPE: "\\u"
@@ -24,6 +26,8 @@ float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
 int_value: /-?(0|[1-9][0-9]*)/
 
+list_value: LBRACKET value* _RBRACKET
+
 name: /[_A-Za-z][_0-9A-Za-z]*/
 
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ | string_character_escaped_unicode | string_character_escaped
@@ -33,6 +37,13 @@ string_character_escaped: _BACKSLASH /[bfnrt"\\\/]/
 string_value: DBLQUOTE string_character* DBLQUOTE -> quoted_string
     | TRIPLE_QUOTES block_string_character* TRIPLE_QUOTES -> block_string
 
+// Add: variable
+value: int_value
+    | float_value
+    | string_value
+    | enum_bool_or_null_value
+    | list_value
+    // TODO: | object_value
 """
 
 
@@ -129,6 +140,11 @@ class _AstTransformer(Transformer):
     def int_value(self, int_token: Token):
         return ast.IntValueNode(int_token.line, int_token.column, int(int_token))
 
+    @staticmethod
+    def list_value(matches):
+        lbracket_token, *items = matches
+        return ast.ListValueNode(line=lbracket_token.line, column=lbracket_token.column, items=items)
+
     @inline_args
     def name(self, name_token: Token):
         return ast.NameNode(line=name_token.line, column=name_token.column, name=str(name_token))
@@ -146,6 +162,16 @@ class _AstTransformer(Transformer):
     def quoted_string(matches: List[Union[str, Token]]) -> ast.StringValueNode:
         string_start, *matches, string_end = matches
         return ast.StringValueNode(line=string_start.line, column=string_start.column, string=''.join(matches))
+
+    @inline_args
+    def value(
+            self,
+            value_node: Union[
+                ast.BooleanValueNode, ast.NullValueNode, ast.EnumValueNode, ast.IntValueNode, ast.FloatValueNode,
+                ast.EnumValueNode, ast.ListValueNode
+            ]
+    ):
+        return value_node
 
 
 def create_parser(start: str) -> Lark:
