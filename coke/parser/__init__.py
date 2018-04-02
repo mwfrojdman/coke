@@ -5,6 +5,7 @@ from typing import List, Iterable, Union
 from lark import Lark, Transformer, inline_args
 from lark.lexer import Token
 
+from coke.parser.exceptions import ParseError
 from . import ast
 
 _GRAMMAR = r"""
@@ -12,6 +13,7 @@ _COLON: ":"
 DBLQUOTE: "\""
 DOLLAR: "$"
 _BACKSLASH: "\\"
+_EXCL: "!"
 LBRACES: "{"
 LBRACKET: "["
 _RBRACES: "}"
@@ -30,9 +32,15 @@ float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
 int_value: /-?(0|[1-9][0-9]*)/
 
+list_type: LBRACKET type _RBRACKET
+
 list_value: LBRACKET value* _RBRACKET
 
 name: /[_A-Za-z][_0-9A-Za-z]*/
+
+named_type: name
+
+non_null_type: (named_type | list_type) _EXCL
 
 object_field: name _COLON value
 
@@ -44,6 +52,10 @@ string_character_escaped: _BACKSLASH /[bfnrt"\\\/]/
 
 string_value: DBLQUOTE string_character* DBLQUOTE -> quoted_string
     | TRIPLE_QUOTES block_string_character* TRIPLE_QUOTES -> block_string
+
+?type: named_type
+    | list_type
+    | non_null_type
 
 ?value: variable
     | int_value
@@ -150,6 +162,10 @@ class _AstTransformer(Transformer):
     def int_value(self, int_token: Token):
         return ast.IntValueNode(int_token.line, int_token.column, int(int_token))
 
+    @inline_args
+    def list_type(self, lbracket_token: Token, type_node: ast.TypeNodeT) -> ast.ListTypeNode:
+        return ast.ListTypeNode(line=lbracket_token.line, column=lbracket_token.column, contained_type_node=type_node)
+
     @staticmethod
     def list_value(matches):
         lbracket_token, *item_nodes = matches
@@ -158,6 +174,16 @@ class _AstTransformer(Transformer):
     @inline_args
     def name(self, name_token: Token):
         return ast.NameNode(line=name_token.line, column=name_token.column, name=str(name_token))
+
+    @inline_args
+    def named_type(self, name_node: ast.NameNode) -> ast.NamedTypeNode:
+        if name_node.name == 'null':
+            raise ParseError(line=name_node.line, column=name_node.column, message='null is not an allowed named type')
+        return ast.NamedTypeNode(line=name_node.line, column=name_node.column, type_name=name_node.name)
+
+    @inline_args
+    def non_null_type(self, type_node: ast.TypeNodeT) -> ast.NonNullTypeNode:
+        return ast.NonNullTypeNode(line=type_node.line, column=type_node.column, nullable_type_node=type_node)
 
     @inline_args
     def object_field(self, name_node: ast.NameNode, value_node: ast.ValueT):

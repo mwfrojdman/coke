@@ -5,6 +5,8 @@ ValueT = Union[
     'StringValueNode', 'ListValueNode',
 ]
 
+TypeNodeT = Union['NamedTypeNode', 'ListTypeNode', 'NonNullTypeNode']
+
 
 class BooleanValueNode:
     __slots__ = 'line', 'column', 'value'
@@ -67,6 +69,21 @@ class IntValueNode:
         return 'IntValue<{}:{} {}>'.format(self.line, self.column, self.integer)
 
 
+class ListTypeNode:
+    __slots__ = 'line', 'column', 'contained_type_node'
+
+    def __init__(self, line: int, column: int, contained_type_node: TypeNodeT):
+        self.line = line
+        self.column = column
+        self.contained_type_node = contained_type_node
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.contained_type_node == self.contained_type_node
+
+    def __repr__(self):
+        return 'ListType<{}:{} {!r}>'.format(self.line, self.column, self.contained_type_node)
+
+
 class ListValueNode:
     __slots__ = 'line', 'column', 'item_nodes'
 
@@ -82,6 +99,21 @@ class ListValueNode:
         return 'ListValue<{}:{} {!r}>'.format(self.line, self.column, self.item_nodes)
 
 
+class NamedTypeNode:
+    __slots__ = 'line', 'column', 'type_name'
+
+    def __init__(self, line: int, column: int, type_name: str):
+        self.line = line
+        self.column = column
+        self.type_name = type_name
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.type_name == self.type_name
+
+    def __repr__(self):
+        return 'NamedType<{}:{} {}>'.format(self.line, self.column, self.type_name)
+
+
 class NameNode:
     __slots__ = 'line', 'column', 'name'
 
@@ -95,6 +127,21 @@ class NameNode:
 
     def __repr__(self):
         return 'Name<{}:{} {}>'.format(self.line, self.column, self.name)
+
+
+class NonNullTypeNode:
+    __slots__ = 'line', 'column', 'nullable_type_node'
+
+    def __init__(self, line: int, column: int, nullable_type_node: TypeNodeT):
+        self.line = line
+        self.column = column
+        self.nullable_type_node = nullable_type_node
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.nullable_type_node == self.nullable_type_node
+
+    def __repr__(self):
+        return 'NonNullType<{}:{} {!r}>'.format(self.line, self.column, self.nullable_type_node)
 
 
 class NullValueNode:
