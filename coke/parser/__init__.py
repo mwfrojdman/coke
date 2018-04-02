@@ -18,9 +18,13 @@ _ESCAPED_TRIPLE_QUOTES: "\\\"\"\""
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
 
+enum_bool_or_null_value: name
+
 float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
 int_value: /-?(0|[1-9][0-9]*)/
+
+name: /[_A-Za-z][_0-9A-Za-z]*/
 
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ | string_character_escaped_unicode | string_character_escaped
 string_character_escaped_unicode: _UNICODE_ESCAPE /[0-9A-Fa-f]{4}/
@@ -102,6 +106,17 @@ class _AstTransformer(Transformer):
 
         return ast.StringValueNode(line=string_start.line, column=string_start.column, string='\n'.join(lines))
 
+    @inline_args
+    def enum_bool_or_null_value(self, name_node: ast.NameNode):
+        if name_node.name == 'null':
+            return ast.NullValueNode(line=name_node.line, column=name_node.column)
+        elif name_node.name == 'true':
+            return ast.BooleanValueNode(line=name_node.line, column=name_node.column, value=True)
+        elif name_node.name == 'false':
+            return ast.BooleanValueNode(line=name_node.line, column=name_node.column, value=False)
+        else:
+            return ast.EnumValueNode(line=name_node.line, column=name_node.column, enum=name_node.name)
+
     @staticmethod
     def escaped_triple_double_quotes(escaped_triple_quotes: str) -> str:
         return '"""'
@@ -113,6 +128,10 @@ class _AstTransformer(Transformer):
     @inline_args
     def int_value(self, int_token: Token):
         return ast.IntValueNode(int_token.line, int_token.column, int(int_token))
+
+    @inline_args
+    def name(self, name_token: Token):
+        return ast.NameNode(line=name_token.line, column=name_token.column, name=str(name_token))
 
     @inline_args
     def string_character_escaped(self, escaped_char: str) -> str:
