@@ -8,10 +8,13 @@ from lark.lexer import Token
 from . import ast
 
 _GRAMMAR = r"""
+_COLON: ":"
 DBLQUOTE: "\""
 DOLLAR: "$"
 _BACKSLASH: "\\"
+LBRACES: "{"
 LBRACKET: "["
+_RBRACES: "}"
 _RBRACKET: "]"
 
 TRIPLE_QUOTES: "\"\"\""
@@ -31,6 +34,10 @@ list_value: LBRACKET value* _RBRACKET
 
 name: /[_A-Za-z][_0-9A-Za-z]*/
 
+object_field: name _COLON value
+
+object_value: LBRACES object_field* _RBRACES
+
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ | string_character_escaped_unicode | string_character_escaped
 string_character_escaped_unicode: _UNICODE_ESCAPE /[0-9A-Fa-f]{4}/
 string_character_escaped: _BACKSLASH /[bfnrt"\\\/]/
@@ -38,13 +45,13 @@ string_character_escaped: _BACKSLASH /[bfnrt"\\\/]/
 string_value: DBLQUOTE string_character* DBLQUOTE -> quoted_string
     | TRIPLE_QUOTES block_string_character* TRIPLE_QUOTES -> block_string
 
-value: variable
+?value: variable
     | int_value
     | float_value
     | string_value
     | enum_bool_or_null_value
     | list_value
-    // TODO: | object_value
+    | object_value
 
 variable: DOLLAR name
 """
@@ -153,6 +160,15 @@ class _AstTransformer(Transformer):
         return ast.NameNode(line=name_token.line, column=name_token.column, name=str(name_token))
 
     @inline_args
+    def object_field(self, name_node: ast.NameNode, value_node: ast.ValueT):
+        return ast.ObjectField(name_node=name_node, value_node=value_node)
+
+    @staticmethod
+    def object_value(matches):
+        lbraces_token, *field_nodes = matches
+        return ast.ObjectValueNode(line=lbraces_token.line, column=lbraces_token.column, field_nodes=field_nodes)
+
+    @inline_args
     def string_character_escaped(self, escaped_char: str) -> str:
         return _ESCAPED_CHARS[escaped_char]
 
@@ -165,16 +181,6 @@ class _AstTransformer(Transformer):
     def quoted_string(matches: List[Union[str, Token]]) -> ast.StringValueNode:
         string_start, *matches, string_end = matches
         return ast.StringValueNode(line=string_start.line, column=string_start.column, string=''.join(matches))
-
-    @inline_args
-    def value(
-            self,
-            value_node: Union[
-                ast.BooleanValueNode, ast.NullValueNode, ast.EnumValueNode, ast.IntValueNode, ast.FloatValueNode,
-                ast.EnumValueNode, ast.ListValueNode
-            ]
-    ):
-        return value_node
 
     @inline_args
     def variable(self, dollar_token: Token, name_node: ast.NameNode) -> ast.VariableNode:

@@ -1,4 +1,9 @@
-from typing import List, Any
+from typing import List, Any, Mapping, Union, Tuple, NamedTuple
+
+ValueT = Union[
+    'BooleanValueNode', 'NullValueNode', 'EnumValueNode', 'IntValueNode', 'FloatValueNode', 'EnumValueNode',
+    'StringValueNode', 'ListValueNode',
+]
 
 
 class BooleanValueNode:
@@ -65,7 +70,7 @@ class IntValueNode:
 class ListValueNode:
     __slots__ = 'line', 'column', 'items'
 
-    def __init__(self, line: int, column: int, items: List[Any]):
+    def __init__(self, line: int, column: int, items: List[ValueT]):
         self.line = line
         self.column = column
         self.items = items
@@ -104,6 +109,24 @@ class NullValueNode:
 
     def __repr__(self):
         return 'NullValue<{}:{}>'.format(self.line, self.column)
+
+
+ObjectField = NamedTuple('ObjectField', [('name_node', NameNode), ('value_node', ValueT)])
+
+
+class ObjectValueNode:
+    __slots__ = 'line', 'column', 'field_nodes'
+
+    def __init__(self, line: int, column: int, field_nodes: List[ObjectField]):
+        self.line = line
+        self.column = column
+        self.field_nodes = field_nodes
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.field_nodes == self.field_nodes
+
+    def __repr__(self):
+        return 'ObjectValue<{}:{} {!r}>'.format(self.line, self.column, self.field_nodes)
 
 
 class StringValueNode:
