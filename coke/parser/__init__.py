@@ -9,6 +9,7 @@ from . import ast
 
 _GRAMMAR = r"""
 DBLQUOTE: "\""
+DOLLAR: "$"
 _BACKSLASH: "\\"
 LBRACKET: "["
 _RBRACKET: "]"
@@ -37,13 +38,15 @@ string_character_escaped: _BACKSLASH /[bfnrt"\\\/]/
 string_value: DBLQUOTE string_character* DBLQUOTE -> quoted_string
     | TRIPLE_QUOTES block_string_character* TRIPLE_QUOTES -> block_string
 
-// Add: variable
-value: int_value
+value: variable
+    | int_value
     | float_value
     | string_value
     | enum_bool_or_null_value
     | list_value
     // TODO: | object_value
+
+variable: DOLLAR name
 """
 
 
@@ -172,6 +175,11 @@ class _AstTransformer(Transformer):
             ]
     ):
         return value_node
+
+    @inline_args
+    def variable(self, dollar_token: Token, name_node: ast.NameNode) -> ast.VariableNode:
+        assert dollar_token == '$'
+        return ast.VariableNode(line=dollar_token.line, column=dollar_token.column, variable=name_node.name)
 
 
 def create_parser(start: str) -> Lark:

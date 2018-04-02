@@ -119,3 +119,18 @@ class StringValueNode:
 
     def __repr__(self):
         return 'StringValue<{}:{} {!r}>'.format(self.line, self.column, self.string)
+
+
+class VariableNode:
+    __slots__ = 'line', 'column', 'variable'
+
+    def __init__(self, line: int, column: int, variable: str):
+        self.line = line
+        self.column = column
+        self.variable = variable
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.variable == self.variable
+
+    def __repr__(self):
+        return 'Variable<{}:{} {}>'.format(self.line, self.column, self.variable)
