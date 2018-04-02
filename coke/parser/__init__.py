@@ -1,5 +1,6 @@
 import re
 from collections import deque
+from typing import List, Any, Union, NewType
 
 from lark import Lark, inline_args, Transformer, Tree
 from lark.lexer import Token
@@ -29,7 +30,7 @@ variable_definitions: LPAREN variable_definition+ RPAREN
 
 variable_definition: variable ":" type default_value?
 
-default_value: value
+default_value: "=" value
 
 
 ?value: variable
@@ -223,10 +224,34 @@ class TreeToDocument(Transformer):
     def variable(self, variable_start, value: ast.NameNode):
         return ast.VariableNode(variable_start.line, variable_start.column, value.value)
 
+    def variable_definition(self, *matches):
+        return self._build_ast_node_from_matches(
+            matches,
+            [
+                ('variable', ast.VariableNode, True, lambda v_node: v_node.value),
+                ('type_node', (ast.NameNode, ast.ListTypeNode, ast.NonNullTypeNode), True),
+                ('default_value', ast.ValueNode, False, OMITTED_DEFAULT_VALUE, None),
+            ],
+            ast.VariableDefinitionNode,
+            new_style=True,
+        )
+
     def variable_definitions(self, args):
         if args == []:
             return args
         raise ValueError(args)
+
+    @inline_args
+    def type(self, match):
+        return match
+
+    @inline_args
+    def list_type(self, match):
+        return ast.ListTypeNode(match)
+
+    @inline_args
+    def non_null_type(self, match):
+        return ast.NonNullTypeNode(match)
 
     @inline_args
     def alias(self, name_node: ast.NameNode):
@@ -247,12 +272,23 @@ class TreeToDocument(Transformer):
         )
 
     @staticmethod
-    def _build_ast_node_from_matches(matches, fields, node_cls, ignore_tokens=()):
+    def _build_ast_node_from_matches(matches, fields, node_cls, *, ignore_tokens=(), new_style=False):
         i = 0
         kwargs = {}
         first_match = matches[0]
         matches = [match for match in matches if not isinstance(match, Token) or match.type not in ignore_tokens]
-        for name, field_cls, required, default, getter in fields:
+        for item in fields:
+            if new_style:
+                name, field_cls, required, *rest = item
+                if not required:
+                    default, *rest = rest
+                if rest:
+                    getter, = rest
+                else:
+                    getter = None
+            else:
+                name, field_cls, required, default, getter = item
+
             try:
                 match = matches[i]
             except IndexError as exc:
@@ -336,6 +372,8 @@ class TreeToDocument(Transformer):
 
     @inline_args
     def named_type(self, name_node):
+        if name_node.value == 'null':
+            raise ValueError('null is now an allowed named type')  # XXX: parse error
         return name_node  # XXX: need to create a named type node?
 
     @inline_args
@@ -354,6 +392,9 @@ class TreeToDocument(Transformer):
             ],
             ast.OperationDefinitionNode,
         )
+
+    def operation_definitions(self, matches):
+        raise ValueError(matches)
 
     @inline_args
     def operation_type(self, token):

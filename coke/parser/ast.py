@@ -293,3 +293,11 @@ class OperationDefinitionNode(BaseNode):
 
 class VariableDefinitionsNode(AstNode):
     __slots__ = 'line', 'column', 'value'
+
+
+class ListTypeNode(AstNode):
+    __slots__ = 'line', 'column', 'value'
+
+
+class NonNullTypeNode(AstNode):
+    __slots__ = 'line', 'column', 'value'
