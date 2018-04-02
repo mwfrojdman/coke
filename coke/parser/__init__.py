@@ -17,6 +17,8 @@ _ESCAPED_TRIPLE_QUOTES: "\\\"\"\""
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
 
+int_value: /-?(0|[1-9][0-9]*)/
+
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ | string_character_escaped_unicode | string_character_escaped
 string_character_escaped_unicode: _UNICODE_ESCAPE /[0-9A-Fa-f]{4}/
 string_character_escaped: _BACKSLASH /[bfnrt"\\\/]/
@@ -100,6 +102,10 @@ class _AstTransformer(Transformer):
     @staticmethod
     def escaped_triple_double_quotes(escaped_triple_quotes: str) -> str:
         return '"""'
+
+    @inline_args
+    def int_value(self, int_token: Token):
+        return ast.IntValueNode(int_token.line, int_token.column, int(int_token))
 
     @inline_args
     def string_character_escaped(self, escaped_char: str) -> str:
