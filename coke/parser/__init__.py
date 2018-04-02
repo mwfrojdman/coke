@@ -7,21 +7,25 @@ from lark.lexer import Token
 from coke.parser import ast
 
 _GRAMMAR = r"""
-document: definition*
+document: definition+
 
-definition: operation_definition | fragment_definition
+definition: executable_definition // TODO? | type_system_definition
 
-operation_definition: operation_type name? variable_definitions directives selection_set
+executable_definition: operation_definition | fragment_definition
+
+operation_definition: operation_type name? variable_definitions? directives? selection_set
     | selection_set
 
-operation_type: "query" -> query
-    | "mutation" -> mutation
+operation_type: QUERY | MUTATION | SUBSCRIPTION
+QUERY: "query"
+MUTATION: "mutation"
+SUBSCRIPTION: "subscription"
 
 
 name: NAME
 NAME: /[_A-Za-z][_0-9A-Za-z]*/
 
-variable_definitions: "(" variable_definition+ ")"  // XXX: or raise exception in python code
+variable_definitions: LPAREN variable_definition+ RPAREN
 
 variable_definition: variable ":" type default_value?
 
@@ -61,8 +65,9 @@ directives: directive+
 directive: DIRECTIVE_START name arguments?
 DIRECTIVE_START: "@"
 
-arguments: ARGUMENTS_START argument+ ")"
-ARGUMENTS_START: "("
+arguments: LPAREN argument+ RPAREN
+LPAREN: "("
+RPAREN: ")"
 
 argument: name ":" value
 
@@ -275,7 +280,7 @@ class TreeToDocument(Transformer):
         return name_node, value_node
 
     def arguments(self, matches):
-        arguments_start, *argument_nodes = matches
+        arguments_start, *argument_nodes, _ = matches
         # TODO: check for duplicate argument names
         return ast.ArgumentsNode(arguments_start.line, arguments_start.column, dict(argument_nodes))
 
@@ -336,6 +341,23 @@ class TreeToDocument(Transformer):
     @inline_args
     def type_condition(self, on_keyword, name_node):
         return ast.TypeConditionNode(line=on_keyword.line, column=on_keyword.column, name=name_node)
+
+    def operation_definition(self, matches):
+        return self._build_ast_node_from_matches(
+            matches,
+            [
+                ('operation_type', ast.OperationTypeNode, True, None, lambda ot_node: ot_node.value),
+                ('name_node', ast.NameNode, False, None, None),
+                ('variable_definitions', ast.VariableDefinitionsNode, False, {}, lambda vd_node: vd_node.value),
+                ('directives', ast.DirectivesNode, False, [], lambda d_node: d_node.value),
+                ('selection_set', ast.SelectionSet, True, None, lambda ss_node: ss_node.value),
+            ],
+            ast.OperationDefinitionNode,
+        )
+
+    @inline_args
+    def operation_type(self, token):
+        return ast.OperationTypeNode(token.line, token.column, token.value)
 
 
 def create_parser(start):

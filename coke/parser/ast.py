@@ -125,6 +125,10 @@ class SelectionSet(AstNode):
     __slots__ = 'line', 'column', 'value'
 
 
+class OperationTypeNode(AstNode):
+    __slots__ = 'line', 'column', 'value'
+
+
 class FieldNode(BaseNode):
     __slots__ = 'line', 'column', 'alias', 'name', 'arguments', 'directives', 'selection_set'
 
@@ -247,3 +251,45 @@ class TypeConditionNode(BaseNode):
             col=self.column,
             name=self.name.value,
         )
+
+
+class OperationDefinitionNode(BaseNode):
+    __slots__ = 'line', 'column', 'operation_type', 'name_node', 'variable_definitions', 'directives', 'selection_set'
+
+    def __init__(self, line: int, column: int, operation_type: str, name_node: NameNode, variable_definitions, directives, selection_set):
+        super().__init__(line, column)
+        self.operation_type = operation_type
+        self.name_node = name_node
+        self.variable_definitions = variable_definitions
+        self.directives = directives
+        self.selection_set = selection_set
+
+    def __eq__(self, other):
+        return (
+                type(other) == type(self) and
+                other.line == self.line and
+                other.column == self.column and
+                self.operation_type == other.operation_type and
+                self.name_node == other.name_node and
+                self.variable_definitions == other.variable_definitions and
+                self.directives == other.directives and
+                self.selection_set == other.selection_set
+        )
+
+    def __repr__(self):
+        return (
+            '{clsname} at line {line}:{col} with name {name}, operation type {optype}, variable definitions {vardefs}, directives {dirs}, and selection set {selection_set}'
+        ).format(
+            clsname=self.__class__.__name__,
+            line=self.line,
+            col=self.column,
+            name=self.name_node.value,
+            optype=self.operation_type,
+            vardefs=self.variable_definitions,
+            dirs=self.directives,
+            selection_set=self.selection_set,
+        )
+
+
+class VariableDefinitionsNode(AstNode):
+    __slots__ = 'line', 'column', 'value'
