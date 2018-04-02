@@ -53,7 +53,7 @@ non_null_type: (named_type | list_type) _IGNORE? _EXCL
 
 object_field: name _IGNORE? _COLON _IGNORE? value
 
-object_value: LBRACES object_field* _RBRACES
+object_value: LBRACES _IGNORE? (object_field _IGNORE?)* _RBRACES
 
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ | string_character_escaped_unicode | string_character_escaped
 string_character_escaped_unicode: _UNICODE_ESCAPE /[0-9A-Fa-f]{4}/

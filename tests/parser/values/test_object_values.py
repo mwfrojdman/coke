@@ -17,3 +17,6 @@ def test_object_of_ints():
         ],
     )
     assert _PARSER.parse('{foo:123bar:456}') == expected
+    assert _PARSER.parse('{ foo:123bar:456}') == expected
+    assert _PARSER.parse('{foo:123bar:456 }') == expected
+    assert _PARSER.parse('{ foo : 123 bar : 456 }') == expected
