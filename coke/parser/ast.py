@@ -68,18 +68,18 @@ class IntValueNode:
 
 
 class ListValueNode:
-    __slots__ = 'line', 'column', 'items'
+    __slots__ = 'line', 'column', 'item_nodes'
 
-    def __init__(self, line: int, column: int, items: List[ValueT]):
+    def __init__(self, line: int, column: int, item_nodes: List[ValueT]):
         self.line = line
         self.column = column
-        self.items = items
+        self.item_nodes = item_nodes
 
     def __eq__(self, other):
-        return type(other) == type(self) and other.items == self.items
+        return type(other) == type(self) and other.item_nodes == self.item_nodes
 
     def __repr__(self):
-        return 'ListValue<{}:{} {!r}>'.format(self.line, self.column, self.items)
+        return 'ListValue<{}:{} {!r}>'.format(self.line, self.column, self.item_nodes)
 
 
 class NameNode:

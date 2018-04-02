@@ -152,8 +152,8 @@ class _AstTransformer(Transformer):
 
     @staticmethod
     def list_value(matches):
-        lbracket_token, *items = matches
-        return ast.ListValueNode(line=lbracket_token.line, column=lbracket_token.column, items=items)
+        lbracket_token, *item_nodes = matches
+        return ast.ListValueNode(line=lbracket_token.line, column=lbracket_token.column, item_nodes=item_nodes)
 
     @inline_args
     def name(self, name_token: Token):

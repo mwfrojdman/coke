@@ -11,7 +11,7 @@ def test_list_of_strings():
     expected = ast.ListValueNode(
         line=1,
         column=0,
-        items=[
+        item_nodes=[
             ast.StringValueNode(1, 1, 'hello'),
             ast.StringValueNode(1, 8, 'world')
         ]
