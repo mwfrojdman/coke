@@ -23,6 +23,24 @@ class AliasNode:
         return 'Alias<{}:{} {}>'.format(self.line, self.column, self.alias)
 
 
+Argument = NamedTuple('Argument', [('name_node', 'NameNode'), ('value_node', ValueT)])
+
+
+class ArgumentsNode:
+    __slots__ = 'line', 'column', 'argument_nodes'
+
+    def __init__(self, line: int, column: int, argument_nodes: List[Argument]):
+        self.line = line
+        self.column = column
+        self.argument_nodes = argument_nodes
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.argument_nodes == self.argument_nodes
+
+    def __repr__(self):
+        return 'Arguments<{}:{} {!r}>'.format(self.line, self.column, self.argument_nodes)
+
+
 class BooleanValueNode:
     __slots__ = 'line', 'column', 'value'
 

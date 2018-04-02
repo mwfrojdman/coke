@@ -18,6 +18,8 @@ LBRACES: "{"
 LBRACKET: "["
 _RBRACES: "}"
 _RBRACKET: "]"
+LPAREN: "("
+_RPAREN: ")"
 
 TRIPLE_QUOTES: "\"\"\""
 _UNICODE_ESCAPE: "\\u"
@@ -25,6 +27,10 @@ _ESCAPED_TRIPLE_QUOTES: "\\\"\"\""
 ON_KEYWORD: "on"
 
 alias: name _IGNORE? _COLON
+
+argument: name _IGNORE? _COLON _IGNORE? value
+
+arguments: LPAREN _IGNORE? argument (_IGNORE? argument)* _IGNORE? _RPAREN
 
 ?block_string_character: _ESCAPED_TRIPLE_QUOTES -> escaped_triple_double_quotes
     | /[\t\n\r -\ufefe\uff00-\uffff]/
@@ -122,6 +128,14 @@ class _AstTransformer(Transformer):
     @inline_args
     def alias(self, name_node: ast.NameNode) -> ast.AliasNode:
         return ast.AliasNode(line=name_node.line, column=name_node.column, alias=name_node.name)
+
+    @inline_args
+    def argument(self, name_node: ast.NameNode, value_node: ast.ValueT) -> ast.Argument:
+        return ast.Argument(name_node=name_node, value_node=value_node)
+
+    def arguments(self, matches):
+        lparen_token, *argument_nodes = matches
+        return ast.ArgumentsNode(line=lparen_token.line, column=lparen_token.column, argument_nodes=argument_nodes)
 
     @staticmethod
     def block_string(matches: List[Union[str, Token]]) -> ast.StringValueNode:
