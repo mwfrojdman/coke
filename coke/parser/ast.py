@@ -7,6 +7,8 @@ ValueT = Union[
 
 TypeNodeT = Union['NamedTypeNode', 'ListTypeNode', 'NonNullTypeNode']
 
+SelectionNodeT = Union['FieldNode', 'FragmentSpreadNode', 'InlineFragmentNode']
+
 
 class AliasNode:
     __slots__ = 'line', 'column', 'alias'
@@ -281,6 +283,21 @@ class ObjectValueNode:
 
     def __repr__(self):
         return 'ObjectValue<{}:{} {!r}>'.format(self.line, self.column, self.field_nodes)
+
+
+class SelectionSetNode:
+    __slots__ = 'line', 'column', 'selection_nodes'
+
+    def __init__(self, line: int, column: int, selection_nodes: List[SelectionNodeT]):
+        self.line = line
+        self.column = column
+        self.selection_nodes = selection_nodes
+
+    def __eq__(self, other):
+        return type(other) == type(self) and other.selection_nodes == self.selection_nodes
+
+    def __repr__(self):
+        return 'SelectionSet<{}:{} {!r}>'.format(self.line, self.column, self.selection_nodes)
 
 
 class StringValueNode:

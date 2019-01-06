@@ -42,7 +42,9 @@ directives: directive (_IGNORE? directive)*
 
 enum_bool_or_null_value: name
 
-field: (alias _IGNORE?)? name (_IGNORE? arguments)? (_IGNORE? directives)?  // TODO: (_IGNORE? selection_set)?
+field: (alias _IGNORE?)? name //(_IGNORE? arguments)? (_IGNORE? directives)? (_IGNORE? selection_set)?
+
+fields: field (_IGNORE? field)*
 
 float_value: /-?(0|[1-9][0-9]*)(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/
 
@@ -61,6 +63,10 @@ non_null_type: (named_type | list_type) _IGNORE? _EXCL
 object_field: name _IGNORE? _COLON _IGNORE? value
 
 object_value: LBRACES _IGNORE? (object_field _IGNORE?)* _RBRACES
+
+?selection: field  // TODO: | fragment_spread | inline_fragment
+
+selection_set: LBRACES _IGNORE? selection _IGNORE? (selection _IGNORE?)* _RBRACES
 
 ?string_character: /[ !\#-\[\]-\ufefe\uff00-\uffff]/ | string_character_escaped_unicode | string_character_escaped
 string_character_escaped_unicode: _UNICODE_ESCAPE /[0-9A-Fa-f]{4}/
@@ -286,6 +292,14 @@ class _AstTransformer(Transformer):
     def object_value(matches):
         lbraces_token, *field_nodes = matches
         return ast.ObjectValueNode(line=lbraces_token.line, column=lbraces_token.column, field_nodes=field_nodes)
+
+    def selection_set(self, matches) -> ast.SelectionSetNode:
+        lbraces_token, *selection_nodes = matches
+        return ast.SelectionSetNode(
+            line=lbraces_token.line,
+            column=lbraces_token.column,
+            selection_nodes=selection_nodes,
+        )
 
     @inline_args
     def string_character_escaped(self, escaped_char: str) -> str:
